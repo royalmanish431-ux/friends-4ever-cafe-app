@@ -1,1 +1,49 @@
+name: Build Android App (APK & AAB)
 
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Re-create Android Project Files
+        run: |
+          flutter create . --platforms=android --org com.friends4evercafe.app
+
+      - name: Inject Android Manifest Permissions and App Name
+        run: |
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          sed -i '/<manifest xmlns:android="http:\/\/schemas.android.com\/apk\/res\/android">/a \    <uses-permission android:name="android.permission.INTERNET"\/>\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"\/>\n    <uses-permission android:name="android.permission.CAMERA"\/>\n    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"\/>\n    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32"\/>' $MANIFEST
+          sed -i 's/android:label="[^"]*"/android:label="Friends 4ever cafe"/' $MANIFEST
+
+      - name: Get Dependencies
+        run: flutter pub get
+
+      - name: Build APK & AAB
+        run: |
+          flutter build apk --release
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          
