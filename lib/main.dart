@@ -25,7 +25,6 @@ class _FriendsCafeAppState extends State<FriendsCafeApp> {
   bool isLoading = true;
   late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
 
-  // Updated link
   final String targetUrl = 'https://friend4evercoffee.netlify.app/';
 
   @override
@@ -62,6 +61,7 @@ class _FriendsCafeAppState extends State<FriendsCafeApp> {
           onNavigationRequest: (NavigationRequest request) async {
             final String url = request.url;
 
+            // WhatsApp, Call, SMS, Email Links
             if (url.startsWith('whatsapp://') ||
                 url.startsWith('intent://') ||
                 url.startsWith('https://wa.me/') ||
@@ -83,6 +83,21 @@ class _FriendsCafeAppState extends State<FriendsCafeApp> {
               }
               return NavigationDecision.prevent;
             }
+
+            // PDF Bill Download / Open handler
+            if (url.endsWith('.pdf') ||
+                url.contains('.pdf?') ||
+                url.contains('/pdf') ||
+                url.startsWith('blob:') ||
+                url.startsWith('data:application/pdf')) {
+              final Uri uri = Uri.parse(url);
+              try {
+                // PDF ko system default PDF viewer / browser me launch karega
+                await launchUrl(uri, mode: LaunchMode.externalApplication);
+              } catch (_) {}
+              return NavigationDecision.prevent;
+            }
+
             return NavigationDecision.navigate;
           },
         ),
@@ -142,7 +157,7 @@ class _FriendsCafeAppState extends State<FriendsCafeApp> {
           children: [
             WebViewWidget(controller: controller),
 
-            // Loading / Splash Screen
+            // Splash Screen
             if (isLoading && !isOffline)
               Container(
                 color: Colors.white,
@@ -194,4 +209,3 @@ class _FriendsCafeAppState extends State<FriendsCafeApp> {
     );
   }
 }
-
